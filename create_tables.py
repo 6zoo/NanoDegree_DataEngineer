@@ -5,6 +5,9 @@ from sql_queries import create_table_queries, drop_table_queries
 
 
 def drop_tables(cur, conn):
+    """
+    Delete existing tables to be able to create new one from scratch
+    """
     for query in drop_table_queries:
         print('Executing drop: '+query)
         cur.execute(query)
@@ -12,6 +15,9 @@ def drop_tables(cur, conn):
 
 
 def create_tables(cur, conn):
+    """
+    Create staging and dimensional tables from the sql_queries.py file    
+    """
     for query in create_table_queries:
         print('Executing create: '+query)
         cur.execute(query)
@@ -19,6 +25,10 @@ def create_tables(cur, conn):
 
 
 def main():
+    """
+    Set connection to the redshift and drop/create needed tables with appropriate schema
+    """
+
     config = configparser.ConfigParser()
     config.read('dwh.cfg')
 

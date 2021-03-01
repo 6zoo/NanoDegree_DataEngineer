@@ -4,6 +4,9 @@ from sql_queries import copy_table_queries, insert_table_queries
 
 
 def load_staging_tables(cur, conn):
+    """
+    load data from S3 bucket to the staging tables
+    """
     for query in copy_table_queries:
         cur.execute(query)
         print('Processing query: {}'.format(query))
@@ -13,6 +16,9 @@ def load_staging_tables(cur, conn):
     print('All files COPIED OK.')
 
 def insert_tables(cur, conn):
+    """
+    select and transform data from staging tables into dimensional tables
+    """
     print("Start inserting data from staging tables into analysis tables...")
     for query in insert_table_queries:
         cur.execute(query)
@@ -23,6 +29,9 @@ def insert_tables(cur, conn):
     print('All files COPIED OK.')
 
 def main():
+    """
+    Run each processes - Load data from S3 to stage and insert them to the dimensional tables
+    """
     config = configparser.ConfigParser()
     config.read('dwh.cfg')
 
