@@ -25,13 +25,13 @@ def create_spark_session():
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
-    song_data = input_data + 'song-data/*/*/*/*.json'
-    
+    song_data = input_data + 'song_data/A/A/A/*.json'
+
     # read song data file
     df = spark.read.json(song_data)
-    songs_table.createOrReplaceTempView('songs')
-
+    
     # extract columns to create songs table
+    df.createOrReplaceTempView('songs')
     songs_table = spark.sql(song_table_sql)
 
     # write songs table to parquet files partitioned by year and artist
@@ -41,7 +41,7 @@ def process_song_data(spark, input_data, output_data):
     
     
     # extract columns to create artists table
-    artists_table.createOrReplaceTempView('artists')
+    df.createOrReplaceTempView('artists')
     artists_table = spark.sql(artist_table_sql)
     
     # write artists table to parquet files
@@ -50,19 +50,19 @@ def process_song_data(spark, input_data, output_data):
 
 def process_log_data(spark, input_data, output_data):
     # get filepath to log data file
-    log_data = input_data + 'log_data/*/*/*-events.json'
-
+    log_data = input_data + 'log_data/2018/11/*.json'
+    
     # read log data file
     df = spark.read.json(log_data)
-    df.createOrReplaceTempView("staging_events")
     
     # filter by actions for song plays
+    df.createOrReplaceTempView("staging_events")
     df = spark.sql(filtered_log_sql)
 
 
     
     # extract columns for users table    
-    user_table.createOrReplaceTempView('users')
+    df.createOrReplaceTempView('users')
     user_table = spark.sql(user_table_sql)
     
     # write users table to parquet files
@@ -93,7 +93,7 @@ def process_log_data(spark, input_data, output_data):
 def main():
     spark = create_spark_session()
     input_data = "s3a://udacity-dend/"
-    output_data = ""
+    output_data = "s3a://tse-nano-de/project_4/"
     
     process_song_data(spark, input_data, output_data)    
     process_log_data(spark, input_data, output_data)
