@@ -1,11 +1,11 @@
 song_table_sql = ("""
                 SELECT
-                    , song_id
+                    song_id
                     , title
                     , artist_id
                     , year
                     , duration
-                FROM song
+                FROM songs
                 GROUP BY 1, 2, 3, 4, 5
             """)
 
