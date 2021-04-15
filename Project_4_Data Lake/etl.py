@@ -16,6 +16,9 @@ os.environ['AWS_SECRET_ACCESS_KEY']=config['AWS']['AWS_SECRET_ACCESS_KEY']
 
 
 def create_spark_session():
+    """
+    creating spark session
+    """
     ### create spark session using SparkSession
     spark = SparkSession \
         .builder \
@@ -32,6 +35,22 @@ def create_spark_session():
 
 
 def process_song_data(spark, input_data, output_data):
+    """
+    Load data from song_data file which stored in s3
+    and extract columns and create tables using written sql query from sql_query.py
+    and writing songs and artists table into parquet
+    and the files will be loaded on S3 bucket
+    
+    Parameters
+    ----------
+    spark: session
+          spark session that has been created
+    input_data: path
+          path to the song_data s3 bucket.
+    output_data: path
+          path to where the parquet files will be written.
+    """
+    
     # get filepath to song data file
     song_data = input_data + 'song_data/A/A/A/*.json'
     print('starting read of song_data json files: ' + str(datetime.now()))
@@ -63,6 +82,22 @@ def process_song_data(spark, input_data, output_data):
 
 
 def process_log_data(spark, input_data, output_data):
+    """
+    Load data from log_data file which stored in s3
+    and extract columns and create three tables using log_date and song_data with using sql_query.py
+    and writing users, time and songplays table into parquet
+    and the files will be loaded on S3 bucket
+    
+    Parameters
+    ----------
+    spark: session
+          spark session that has been created
+    input_data: path
+          path to the log_data s3 bucket.
+    output_data: path
+          path to where the parquet files will be written.
+    """
+    
     # get filepath to log data file
     log_data = input_data + 'log_data/2018/11/2018-11-12-events.json'
     
@@ -111,7 +146,15 @@ def process_log_data(spark, input_data, output_data):
     print('write of songplays table to S3 complete: ' + str(datetime.now()))
 
 
-def main():
+def main():    
+    """
+    Perform the following roles:
+    1.) Get or create a spark session.
+    1.) Read the song and log data from s3.
+    2.) Extract and Transform them into tables
+    3.) Write and Load the parquet files on s3.
+    """
+
     spark = create_spark_session()
     input_data = "s3a://udacity-dend/"
     output_data = "s3a://tse-udacity-nano-de/project_4/"
