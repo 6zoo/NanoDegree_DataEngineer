@@ -7,6 +7,7 @@ from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, dat
 from sql_query import song_table_sql, artist_table_sql, filtered_log_sql, user_table_sql, time_table_sql, songplays_table_sql
 
 
+
 config = configparser.ConfigParser()
 config.read('dl.cfg')
 
@@ -20,23 +21,34 @@ def create_spark_session():
         .builder \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
         .getOrCreate()
+
+    ### set file output committed to _temporary folder. it makes writing files to S3 faster
+        ## ref) https://stackoverflow.com/a/42834182/4549682
+
+    sc = spark.sparkContext
+    sc._jsc.hadoopConfiguration().set("mapreduce.fileoutputcommitter.algorithm.version", "2")
+
     return spark
 
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
     song_data = input_data + 'song_data/A/A/A/*.json'
+    print('starting read of song_data json files: ' + str(datetime.now()))
 
     # read song data file
     df = spark.read.json(song_data)
+    print('loading of song_data files complete: ' + str(datetime.now()))
     
     # extract columns to create songs table
     df.createOrReplaceTempView('songs')
     songs_table = spark.sql(song_table_sql)
 
     # write songs table to parquet files partitioned by year and artist
+    print('writing songs table to S3: ' + str(datetime.now()))
     songs_table.write.partitionBy('year', 'artist_id')\
                     .parquet(os.path.join(output_data, 'songs/songs.parquet'), 'overwrite')
+    print('write of songs table to S3 complete: ' + str(datetime.now()))
 
     
     
@@ -45,15 +57,19 @@ def process_song_data(spark, input_data, output_data):
     artists_table = spark.sql(artist_table_sql)
     
     # write artists table to parquet files
+    print('writing artists table to S3: ' + str(datetime.now()))
     artists_table.write.parquet(os.path.join(output_data, 'artists/artists.parquet'), 'overwrite')
+    print('write of artists table to S3 complete: ' + str(datetime.now()))
 
 
 def process_log_data(spark, input_data, output_data):
     # get filepath to log data file
-    log_data = input_data + 'log_data/2018/11/*.json'
+    log_data = input_data + 'log_data/2018/11/2018-11-12-events.json'
     
     # read log data file
+    print('reading log data from S3: ' + str(datetime.now()))
     df = spark.read.json(log_data)
+    print('loading of log data from S3 complete: ' + str(datetime.now()))
     
     # filter by actions for song plays
     df.createOrReplaceTempView("staging_events")
@@ -61,39 +77,44 @@ def process_log_data(spark, input_data, output_data):
 
 
     
-    # extract columns for users table    
-    df.createOrReplaceTempView('users')
-    user_table = spark.sql(user_table_sql)
+    # extract columns for users table   
+    user_table = spark.sql(user_table_sql).dropDuplicates(['user_id', 'level'])
     
     # write users table to parquet files
+    print('writing users table to S3: ' + str(datetime.now()))
     user_table.write.parquet(os.path.join(output_data, 'users/users.parquet'), 'overwrite')
+    print('loading of users table to S3: ' + str(datetime.now()))
 
     
     
     # create timestamp column from original timestamp column
     ### I used SQL join clause to get timestamp from staging_events table instead of using udf(maybe use labmda str functions)
     time_table = spark.sql(time_table_sql)
-    time_table.write.partitonBy('year', 'month')\
-                .parquet(os.path.join(output_date, 'time/time.parquet'), 'overwrite')
+
+    print('writing time table to S3 partitioned by year and month: ' + str(datetime.now()))
+    time_table.write.partitionBy('year', 'month')\
+                .parquet(os.path.join(output_data, 'time/time.parquet'), 'overwrite')
+    print('write of time table to S3 complete: ' + str(datetime.now()))
     
     
     # read in song data to use for songplays table
-    song_df = spark.read.parquet(output_data + "songs/songs.parquet")
-    song_df = createOrReplaceTempView('songs')
+    song_df = spark.read.parquet(output_data + "/songs/songs.parquet")
+    song_df.createOrReplaceTempView("songs")
 
     # extract columns from joined song and log datasets to create songplays table 
     songplays_table = spark.sql(songplays_table_sql)
 
     # write songplays table to parquet files partitioned by year and month
+    print('writing songplays table to S3 partitioned by year and month: ' + str(datetime.now()))
     songplays_table.write.partitionBy('year', 'month') \
                 .parquet(os.path.join(output_data, 'songplays/songplays.parquet'), 'overwrite')
-
+    print('write of songplays table to S3 complete: ' + str(datetime.now()))
 
 
 def main():
     spark = create_spark_session()
     input_data = "s3a://udacity-dend/"
-    output_data = "s3a://tse-nano-de/project_4/"
+    output_data = "s3a://tse-udacity-nano-de/project_4/"
     
     process_song_data(spark, input_data, output_data)    
     process_log_data(spark, input_data, output_data)

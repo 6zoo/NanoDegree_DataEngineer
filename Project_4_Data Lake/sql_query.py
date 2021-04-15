@@ -1,7 +1,7 @@
 song_table_sql = ("""
                 SELECT
                     song_id
-                    , title
+                    , title as song_title
                     , artist_id
                     , year
                     , duration
@@ -13,10 +13,10 @@ song_table_sql = ("""
 artist_table_sql = ("""
                 SELECT
                     artist_id
-                    , name
-                    , location
-                    , lattitude
-                    , longitude
+                    , artist_name
+                    , artist_location
+                    , artist_latitude
+                    , artist_longitude
                 FROM artists
                 GROUP BY 1, 2, 3, 4, 5
             """)
@@ -25,47 +25,47 @@ artist_table_sql = ("""
 filtered_log_sql = ("""
                 SELECT *
                     , cast(ts/1000 as Timestamp) as timestamp
-                from staging_events
-                where page = 'NextSong'
+                FROM staging_events
+                WHERE page = 'NextSong'
             """)
 
 user_table_sql = ("""
                 SELECT
-                    user_id
-                    , first_name
-                    , last_name
+                    userId as user_id
+                    , firstName as first_name
+                    , lastName as last_name
                     , gender
                     , level
-                FROM users
+                FROM staging_events
                 GROUP BY 1, 2, 3, 4, 5
             """)
     
 time_table_sql = ("""
                 SELECT
-                    distinct timestamp as start_time, 
-                    hour(timestamp) as hour, 
-                    day(timestamp) as day, 
-                    weekofyear(timestamp) as week, 
-                    month(timestamp) as month, 
-                    year(timestamp) as year, 
-                    weekday(timestamp) as weekday
+                    cast(ts/1000 as Timestamp) as start_time, 
+                    hour(cast(ts/1000 as Timestamp)) as hour, 
+                    day(cast(ts/1000 as Timestamp)) as day, 
+                    weekofyear(cast(ts/1000 as Timestamp)) as week, 
+                    month(cast(ts/1000 as Timestamp)) as month, 
+                    year(cast(ts/1000 as Timestamp)) as year, 
+                    weekday(cast(ts/1000 as Timestamp)) as weekday
                 FROM staging_events
+                GROUP BY 1, 2, 3, 4, 5, 6, 7
             """)
 
 
-songplays_table_sql = """
+songplays_table_sql = ("""
                 SELECT
-                songplay_id
-                , a.start_time
-                , a.user_id
-                , a.level
-                , b.song_id
-                , b.artist_id
-                , a.session_id
-                , a.location
-                , a.user_agent
-                , year(a.timestamp) as year
-                , month(a.timestamp) as month
-                FROM staging_events inner as a join songs as b
-                    on songs.title = staging_events.song
-"""
+                    a.ts as start_time
+                    , a.userId as user_id
+                    , a.level
+                    , b.song_id
+                    , b.artist_id
+                    , a.sessionId
+                    , a.location
+                    , a.userAgent as user_agent
+                    , year(cast(a.ts/1000 as Timestamp)) as year
+                    , month(cast(a.ts/1000 as Timestamp)) as month 
+                FROM staging_events as a 
+                    INNER JOIN songs as b on a.song = b.song_title
+            """)
